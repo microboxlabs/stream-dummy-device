@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import FormData from 'form-data';
 
 /**
  * API Client for StreamHub frame ingestion
@@ -80,17 +79,20 @@ export class ApiClient {
   async sendFrames(framePaths, deviceId, timestamp) {
     const token = await this.getToken();
     
+    // Use native FormData with Blob for proper multipart handling
     const form = new FormData();
     form.append('device_id', deviceId);
     form.append('timestamp', timestamp);
 
-    // Add each frame
+    // Add each frame as a Blob
     for (const framePath of framePaths) {
       const filename = path.basename(framePath);
-      form.append('frame', fs.createReadStream(framePath), {
-        filename,
-        contentType: this.getContentType(framePath),
-      });
+      const fileBuffer = fs.readFileSync(framePath);
+      const contentType = this.getContentType(framePath);
+      
+      // Create a Blob from the file buffer
+      const blob = new Blob([fileBuffer], { type: contentType });
+      form.append('frame', blob, filename);
     }
 
     const url = `${this.config.baseUrl}/v1/stream/frames`;
@@ -99,7 +101,6 @@ export class ApiClient {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        ...form.getHeaders(),
       },
       body: form,
     });
@@ -128,4 +129,3 @@ export class ApiClient {
     return types[ext] || 'application/octet-stream';
   }
 }
-
