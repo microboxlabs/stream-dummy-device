@@ -19,6 +19,8 @@ export default [
         clearInterval: 'readonly',
         fetch: 'readonly',
         URLSearchParams: 'readonly',
+        FormData: 'readonly',
+        Blob: 'readonly',
       },
     },
     rules: {
