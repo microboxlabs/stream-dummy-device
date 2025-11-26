@@ -1,0 +1,48 @@
+{
+  "name": "@streamhub/dummy-device",
+  "version": "1.0.0",
+  "description": "CLI tool for simulating IoT devices sending frames to StreamHub API",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "dummy-device": "./src/cli.js",
+    "streamhub-dummy-device": "./src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "dev": "node --watch src/cli.js",
+    "lint": "eslint src/",
+    "test": "node --test"
+  },
+  "keywords": [
+    "streamhub",
+    "iot",
+    "simulator",
+    "cli",
+    "video",
+    "stream"
+  ],
+  "author": "MicroboxLabs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/microboxlabs/stream-dummy-device.git"
+  },
+  "bugs": {
+    "url": "https://github.com/microboxlabs/stream-dummy-device/issues"
+  },
+  "homepage": "https://github.com/microboxlabs/stream-dummy-device#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "form-data": "^4.0.0",
+    "ora": "^8.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  }
+}
