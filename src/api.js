@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import FormData from 'form-data';
+import { randomUUID } from 'crypto';
 
 /**
  * API Client for StreamHub frame ingestion
@@ -77,20 +77,30 @@ export class ApiClient {
   /**
    * Send frames to StreamHub API
    */
-  async sendFrames(framePaths, deviceId, timestamp) {
+  async sendFrames(framePaths, deviceId, timestamp, secondaryKey = null) {
     const token = await this.getToken();
+    const requestId = randomUUID();
+    const requestTimestamp = Math.floor(Date.now() / 1000);
     
+    // Use native FormData with Blob for proper multipart handling
     const form = new FormData();
     form.append('device_id', deviceId);
     form.append('timestamp', timestamp);
 
-    // Add each frame
+    // Add optional secondary key
+    if (secondaryKey) {
+      form.append('secondary_key', secondaryKey);
+    }
+
+    // Add each frame as a Blob
     for (const framePath of framePaths) {
       const filename = path.basename(framePath);
-      form.append('frame', fs.createReadStream(framePath), {
-        filename,
-        contentType: this.getContentType(framePath),
-      });
+      const fileBuffer = fs.readFileSync(framePath);
+      const contentType = this.getContentType(framePath);
+      
+      // Create a Blob from the file buffer
+      const blob = new Blob([fileBuffer], { type: contentType });
+      form.append('frame', blob, filename);
     }
 
     const url = `${this.config.baseUrl}/v1/stream/frames`;
@@ -99,7 +109,8 @@ export class ApiClient {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        ...form.getHeaders(),
+        'X-Request-Id': requestId,
+        'X-Request-Timestamp': requestTimestamp.toString(),
       },
       body: form,
     });
@@ -109,7 +120,14 @@ export class ApiClient {
       throw new Error(`API request failed: ${response.status} - ${text}`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    
+    // Include request tracking info in result
+    return {
+      ...result,
+      requestId: response.headers.get('X-Request-Id') || requestId,
+      requestTimestamp: response.headers.get('X-Request-Timestamp') || requestTimestamp,
+    };
   }
 
   /**
@@ -128,4 +146,3 @@ export class ApiClient {
     return types[ext] || 'application/octet-stream';
   }
 }
-

@@ -1,6 +1,6 @@
 {
   "name": "@microboxlabs/dummy-device",
-  "version": "1.1.0",
+  "version": "1.0.2",
   "description": "CLI tool for simulating IoT devices sending frames to StreamHub API",
   "type": "module",
   "main": "src/index.js",
