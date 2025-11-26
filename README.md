@@ -1,17 +1,17 @@
-# @streamhub/dummy-device
+# @microboxlabs/dummy-device
 
 CLI tool for simulating IoT devices sending frames to StreamHub API.
 
 ## Installation
 
 ```bash
-npm install -g @streamhub/dummy-device
+npm install -g @microboxlabs/dummy-device
 ```
 
 Or run directly with npx:
 
 ```bash
-npx @streamhub/dummy-device [options] <directory>
+npx @microboxlabs/dummy-device [options] <directory>
 ```
 
 ## Usage
@@ -24,13 +24,13 @@ dummy-device [options] <directory>
 
 ```bash
 # Send frames from directory every 5 seconds, 2 at a time
-npx @streamhub/dummy-device -I 5 -s 2 ~/Documents/sample-frames --auth-token="<JWT>"
+npx @microboxlabs/dummy-device -I 5 -s 2 ~/Documents/sample-frames --auth-token="<JWT>"
 ```
 
 ### With OAuth2 Client Credentials
 
 ```bash
-npx @streamhub/dummy-device \
+npx @microboxlabs/dummy-device \
   -I 5 \
   -s 2 \
   --client-id="your-client-id" \
@@ -43,7 +43,7 @@ npx @streamhub/dummy-device \
 ### Using Environment File
 
 ```bash
-npx @streamhub/dummy-device -e .env ~/Documents/sample-frames
+npx @microboxlabs/dummy-device -e .env ~/Documents/sample-frames
 ```
 
 ## Options
@@ -122,7 +122,7 @@ With --loop: starts again from img0.jpg
 ## Programmatic Usage
 
 ```javascript
-import { DummyDevice, loadConfig } from '@streamhub/dummy-device';
+import { DummyDevice, loadConfig } from '@microboxlabs/dummy-device';
 
 const config = loadConfig({
   interval: 5,

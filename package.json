@@ -1,5 +1,5 @@
 {
-  "name": "@streamhub/dummy-device",
+  "name": "@microboxlabs/dummy-device",
   "version": "1.0.0",
   "description": "CLI tool for simulating IoT devices sending frames to StreamHub API",
   "type": "module",

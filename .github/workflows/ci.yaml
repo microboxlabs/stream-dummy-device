@@ -54,7 +54,7 @@ jobs:
         id: version
         run: |
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          NPM_VERSION=$(npm view @streamhub/dummy-device version 2>/dev/null || echo "0.0.0")
+          NPM_VERSION=$(npm view @microboxlabs/dummy-device version 2>/dev/null || echo "0.0.0")
           if [ "$PACKAGE_VERSION" != "$NPM_VERSION" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "Version changed: $NPM_VERSION -> $PACKAGE_VERSION"
@@ -65,7 +65,7 @@ jobs:
 
       - name: Publish to npm
         if: steps.version.outputs.changed == 'true'
-        run: npm publish --access public
+        run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
