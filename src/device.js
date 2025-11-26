@@ -127,7 +127,12 @@ export class DummyDevice {
         await this.sleep(500);
         spinner.succeed(chalk.gray(`[DRY RUN] Batch #${batchNumber}: Would send ${batch.length} frame(s)`));
       } else {
-        const result = await this.api.sendFrames(batch, this.config.deviceId, timestamp);
+        const result = await this.api.sendFrames(
+          batch,
+          this.config.deviceId,
+          timestamp,
+          this.config.secondaryKey
+        );
         
         spinner.succeed(
           `Batch #${batchNumber}: Sent ${batch.length} frame(s) ` +
@@ -136,6 +141,9 @@ export class DummyDevice {
 
         if (this.config.verbose) {
           console.log(chalk.gray(`   └─ Frames: ${batch.map(f => path.basename(f)).join(', ')}`));
+          if (this.config.secondaryKey) {
+            console.log(chalk.gray(`   └─ Secondary Key: ${this.config.secondaryKey}`));
+          }
         }
       }
 
@@ -181,4 +189,3 @@ export class DummyDevice {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
-
