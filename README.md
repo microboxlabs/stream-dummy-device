@@ -27,6 +27,13 @@ dummy-device [options] <directory>
 npx @microboxlabs/dummy-device -I 5 -s 2 ~/Documents/sample-frames --auth-token="<JWT>"
 ```
 
+### With Secondary Key
+
+```bash
+# Send frames with a custom secondary key for indexing
+npx @microboxlabs/dummy-device -I 5 -k "my-batch-001" ~/Documents/sample-frames --auth-token="<JWT>"
+```
+
 ### With OAuth2 Client Credentials
 
 ```bash
@@ -50,19 +57,20 @@ npx @microboxlabs/dummy-device -e .env ~/Documents/sample-frames
 
 | Option | Short | Description | Default |
 |--------|-------|-------------|---------|
-| `--interval <seconds>` | `-I` | Interval between frame batches | `5` |
-| `--size <count>` | `-s` | Number of frames per batch | `1` |
-| `--base-url <url>` | `-b` | StreamHub API base URL | `http://localhost:8080` |
-| `--device-id <id>` | `-d` | Device identifier | `device-{timestamp}` |
-| `--auth-token <token>` | `-t` | JWT authentication token | - |
-| `--client-id <id>` | - | OAuth2 client ID | - |
-| `--client-secret <secret>` | - | OAuth2 client secret | - |
-| `--token-url <url>` | - | OAuth2 token endpoint URL | - |
-| `--audience <audience>` | - | OAuth2 audience (for Auth0) | - |
-| `--env-file <path>` | `-e` | Path to .env file | `.env` |
-| `--loop` | `-l` | Loop through images indefinitely | `false` |
-| `--verbose` | `-v` | Enable verbose logging | `false` |
-| `--dry-run` | - | Simulate without HTTP requests | `false` |
+| --interval \<seconds\> | -I | Interval between frame batches | 5 |
+| --size \<count\> | -s | Number of frames per batch | 1 |
+| --base-url \<url\> | -b | StreamHub API base URL | http://localhost:8080 |
+| --device-id \<id\> | -d | Device identifier | device-{timestamp} |
+| --secondary-key \<key\> | -k | Secondary index key for frame lookup | - |
+| --auth-token \<token\> | -t | JWT authentication token | - |
+| --client-id \<id\> | - | OAuth2 client ID | - |
+| --client-secret \<secret\> | - | OAuth2 client secret | - |
+| --token-url \<url\> | - | OAuth2 token endpoint URL | - |
+| --audience \<audience\> | - | OAuth2 audience (for Auth0) | - |
+| --env-file \<path\> | -e | Path to .env file | .env |
+| --loop | -l | Loop through images indefinitely | false |
+| --verbose | -v | Enable verbose logging | false |
+| --dry-run | - | Simulate without HTTP requests | false |
 
 ## Environment Variables
 
@@ -70,24 +78,26 @@ All options can be set via environment variables:
 
 | Variable | Description |
 |----------|-------------|
-| `STREAMHUB_INTERVAL` | Interval between batches (seconds) |
-| `STREAMHUB_SIZE` | Number of frames per batch |
-| `STREAMHUB_BASE_URL` | StreamHub API base URL |
-| `STREAMHUB_DEVICE_ID` | Device identifier |
-| `STREAMHUB_AUTH_TOKEN` | JWT authentication token |
-| `STREAMHUB_CLIENT_ID` | OAuth2 client ID |
-| `STREAMHUB_CLIENT_SECRET` | OAuth2 client secret |
-| `STREAMHUB_TOKEN_URL` | OAuth2 token endpoint URL |
-| `STREAMHUB_AUDIENCE` | OAuth2 audience |
-| `STREAMHUB_LOOP` | Loop mode (`true`/`false`) |
-| `STREAMHUB_VERBOSE` | Verbose logging (`true`/`false`) |
-| `STREAMHUB_DRY_RUN` | Dry run mode (`true`/`false`) |
+| STREAMHUB_INTERVAL | Interval between batches (seconds) |
+| STREAMHUB_SIZE | Number of frames per batch |
+| STREAMHUB_BASE_URL | StreamHub API base URL |
+| STREAMHUB_DEVICE_ID | Device identifier |
+| STREAMHUB_SECONDARY_KEY | Secondary index key for frame lookup |
+| STREAMHUB_AUTH_TOKEN | JWT authentication token |
+| STREAMHUB_CLIENT_ID | OAuth2 client ID |
+| STREAMHUB_CLIENT_SECRET | OAuth2 client secret |
+| STREAMHUB_TOKEN_URL | OAuth2 token endpoint URL |
+| STREAMHUB_AUDIENCE | OAuth2 audience |
+| STREAMHUB_LOOP | Loop mode (true/false) |
+| STREAMHUB_VERBOSE | Verbose logging (true/false) |
+| STREAMHUB_DRY_RUN | Dry run mode (true/false) |
 
 ### Example .env file
 
 ```env
 STREAMHUB_BASE_URL=https://api.streamhub.io
 STREAMHUB_DEVICE_ID=my-device-001
+STREAMHUB_SECONDARY_KEY=batch-001
 STREAMHUB_INTERVAL=5
 STREAMHUB_SIZE=2
 STREAMHUB_CLIENT_ID=your-client-id
@@ -129,6 +139,7 @@ const config = loadConfig({
   size: 2,
   baseUrl: 'http://localhost:8080',
   deviceId: 'my-device',
+  secondaryKey: 'my-batch-001',
   authToken: 'your-jwt-token',
   loop: true,
 });
@@ -161,4 +172,3 @@ npm run dev
 ## License
 
 MIT
-

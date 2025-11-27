@@ -31,6 +31,12 @@ export function loadConfig(cliOptions) {
       process.env.STREAMHUB_DEVICE_ID || 
       `device-${Date.now()}`,
     
+    // Secondary index key for frame lookup
+    secondaryKey:
+      cliOptions.secondaryKey ||
+      process.env.STREAMHUB_SECONDARY_KEY ||
+      null,
+    
     // Direct JWT token
     authToken: 
       cliOptions.authToken || 
@@ -94,4 +100,3 @@ export function validateConfig(config) {
 
   return errors;
 }
-

@@ -43,7 +43,7 @@ export class DummyDevice {
       throw new Error(`No images found in directory: ${this.directory}`);
     }
 
-    console.log(chalk.green(`✓ Found ${this.images.length} images\n`));
+    console.log(chalk.green(`\u2713 Found ${this.images.length} images\n`));
 
     // Initialize API client (get initial token if using OAuth2)
     await this.api.initialize();
@@ -51,7 +51,7 @@ export class DummyDevice {
     this.running = true;
     this.stats.startTime = Date.now();
 
-    console.log(chalk.green.bold('▶ Starting frame transmission...\n'));
+    console.log(chalk.green.bold('\u25b6 Starting frame transmission...\n'));
 
     // Main loop
     while (this.running) {
@@ -63,9 +63,9 @@ export class DummyDevice {
       if (this.currentIndex >= this.images.length) {
         if (this.config.loop) {
           this.currentIndex = 0;
-          console.log(chalk.cyan('\n🔄 Looping back to start...\n'));
+          console.log(chalk.cyan('\n\ud83d\udd04 Looping back to start...\n'));
         } else {
-          console.log(chalk.green.bold('\n✓ All images sent successfully!\n'));
+          console.log(chalk.green.bold('\n\u2713 All images sent successfully!\n'));
           this.printStats();
           break;
         }
@@ -127,7 +127,12 @@ export class DummyDevice {
         await this.sleep(500);
         spinner.succeed(chalk.gray(`[DRY RUN] Batch #${batchNumber}: Would send ${batch.length} frame(s)`));
       } else {
-        const result = await this.api.sendFrames(batch, this.config.deviceId, timestamp);
+        const result = await this.api.sendFrames(
+          batch,
+          this.config.deviceId,
+          timestamp,
+          this.config.secondaryKey
+        );
         
         spinner.succeed(
           `Batch #${batchNumber}: Sent ${batch.length} frame(s) ` +
@@ -135,7 +140,10 @@ export class DummyDevice {
         );
 
         if (this.config.verbose) {
-          console.log(chalk.gray(`   └─ Frames: ${batch.map(f => path.basename(f)).join(', ')}`));
+          console.log(chalk.gray(`   \u2514\u2500 Frames: ${batch.map(f => path.basename(f)).join(', ')}`));
+          if (this.config.secondaryKey) {
+            console.log(chalk.gray(`   \u2514\u2500 Secondary Key: ${this.config.secondaryKey}`));
+          }
         }
       }
 
@@ -148,7 +156,7 @@ export class DummyDevice {
       this.stats.errors++;
       
       if (this.config.verbose) {
-        console.error(chalk.red(`   └─ ${error.stack}`));
+        console.error(chalk.red(`   \u2514\u2500 ${error.stack}`));
       }
 
       // Continue to next batch despite error
@@ -164,14 +172,14 @@ export class DummyDevice {
       ? Math.round((Date.now() - this.stats.startTime) / 1000)
       : 0;
 
-    console.log(chalk.gray('\n─'.repeat(50)));
-    console.log(chalk.cyan.bold('📊 Statistics'));
-    console.log(chalk.gray('─'.repeat(50)));
+    console.log(chalk.gray('\n\u2500'.repeat(50)));
+    console.log(chalk.cyan.bold('\ud83d\udcca Statistics'));
+    console.log(chalk.gray('\u2500'.repeat(50)));
     console.log(chalk.white('  Batches sent:  ') + chalk.green(this.stats.batches));
     console.log(chalk.white('  Frames sent:   ') + chalk.green(this.stats.frames));
     console.log(chalk.white('  Errors:        ') + chalk.red(this.stats.errors));
     console.log(chalk.white('  Duration:      ') + chalk.yellow(`${duration}s`));
-    console.log(chalk.gray('─'.repeat(50)) + '\n');
+    console.log(chalk.gray('\u2500'.repeat(50)) + '\n');
   }
 
   /**
@@ -181,4 +189,3 @@ export class DummyDevice {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
-
