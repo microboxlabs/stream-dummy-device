@@ -1,6 +1,6 @@
 # @microboxlabs/dummy-device
 
-CLI tool for simulating IoT devices sending frames to StreamHub API.
+CLI tool for simulating IoT devices sending frames and GPS positions to StreamHub API.
 
 ## Installation
 
@@ -105,6 +105,51 @@ STREAMHUB_CLIENT_SECRET=your-client-secret
 STREAMHUB_TOKEN_URL=https://your-domain.auth0.com/oauth/token
 STREAMHUB_AUDIENCE=https://api.streamhub.io
 ```
+
+## GPS positions
+
+`dummy-device track` sends positions of one asset to a track endpoint, one per interval.
+
+**With client credentials** (the token request is sent as JSON):
+
+```bash
+npx @microboxlabs/dummy-device track \
+  --track-url https://iot.streamhub.cl/v1/asset/track \
+  --token-url https://api.microboxlabs.com/api/v1/login \
+  --client-id "<client_id>" --client-secret "<client_secret>" \
+  --audience https://iot.streamhub.cl/v1/asset/track \
+  --asset-id ABCD12 --count 5 --interval 5
+```
+
+**With a MIOT API key** (`miot_sk_...`, sent as the bearer token):
+
+```bash
+npx @microboxlabs/dummy-device track \
+  --track-url https://<host>/api/v1/asset/track \
+  --auth-token "miot_sk_..." --asset-id ABCD12
+```
+
+Without `--route`, positions start at `--latitude`/`--longitude` and move along `--heading` at `--speed`.
+`--route` takes a JSON array of `[latitude, longitude]` pairs or a GeoJSON `LineString`.
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| --track-url \<url\> | Track endpoint | - |
+| --asset-id \<id\> | Asset identifier (plate) | ASSET{n} |
+| --interval \<seconds\> | Seconds between positions | 5 |
+| --count \<count\> | Positions to send without a route | 10 |
+| --route \<file\> | Route file | - |
+| --latitude, --longitude | Start point without a route | -33.4489, -70.6693 |
+| --speed \<kmh\> | Speed in km/h | 50 |
+| --heading \<deg\> | Heading without a route | 90 |
+| --auth-token \<token\> | JWT or MIOT API key | - |
+| --client-id, --client-secret, --token-url, --audience | OAuth2 client credentials | - |
+| --loop | Repeat the positions | false |
+| --dry-run | Print the positions without sending | false |
+
+Environment variables: `STREAMHUB_TRACK_URL`, `STREAMHUB_ASSET_ID`, `STREAMHUB_COUNT`, `STREAMHUB_ROUTE`,
+`STREAMHUB_LATITUDE`, `STREAMHUB_LONGITUDE`, `STREAMHUB_SPEED`, `STREAMHUB_HEADING`, plus the
+authentication variables above. The command exits with 1 when any position is rejected.
 
 ## Frame Iteration
 
