@@ -1,13 +1,17 @@
 {
   "name": "@microboxlabs/dummy-device",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "CLI tool for simulating IoT devices sending frames and GPS positions to StreamHub API",
   "type": "module",
   "main": "src/index.js",
   "bin": {
-    "dummy-device": "./src/cli.js",
-    "streamhub-dummy-device": "./src/cli.js"
+    "dummy-device": "src/cli.js",
+    "streamhub-dummy-device": "src/cli.js"
   },
+  "files": [
+    "src",
+    "env.example"
+  ],
   "scripts": {
     "start": "node src/cli.js",
     "dev": "node --watch src/cli.js",
