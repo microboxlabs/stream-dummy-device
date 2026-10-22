@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
+import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { config } from 'dotenv';
 import chalk from 'chalk';
 import { DummyDevice } from './device.js';
 import { loadConfig } from './config.js';
 import { TrackDevice, loadTrackConfig } from './track.js';
+
+const { version } = createRequire(import.meta.url)('../package.json');
 
 const program = new Command();
 
@@ -20,7 +23,7 @@ function loadEnv(envFile) {
 program
   .name('dummy-device')
   .description('CLI tool for simulating IoT devices sending frames and GPS positions to StreamHub API')
-  .version('1.1.0');
+  .version(version);
 
 program
   .command('frames <directory>', { isDefault: true })
