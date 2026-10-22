@@ -1,5 +1,4 @@
 import fs from 'fs';
-import { randomUUID } from 'crypto';
 import chalk from 'chalk';
 
 const EARTH_RADIUS_M = 6371000;
@@ -26,7 +25,17 @@ export function loadTrackConfig(cliOptions) {
     loop: cliOptions.loop || process.env.STREAMHUB_LOOP === 'true',
     verbose: cliOptions.verbose || process.env.STREAMHUB_VERBOSE === 'true',
     dryRun: cliOptions.dryRun || process.env.STREAMHUB_DRY_RUN === 'true',
+    panic: parsePanic(cliOptions.panic ?? process.env.STREAMHUB_PANIC),
   };
+}
+
+/**
+ * The position numbers (1-based) whose frame has the panic button pressed, from "3" or "3,4,5".
+ * Null when the option is not given: the frames then carry no panic button at all.
+ */
+export function parsePanic(value) {
+  if (value === undefined || value === null || value === '') return null;
+  return new Set(String(value).split(',').map((v) => parseInt(v.trim(), 10)));
 }
 
 export function validateTrackConfig(config) {
@@ -48,6 +57,9 @@ export function validateTrackConfig(config) {
   }
   if (!config.route && !(config.count >= 1)) {
     errors.push('--count must be at least 1');
+  }
+  if (config.panic && [...config.panic].some((n) => !(n >= 1))) {
+    errors.push('--panic must be position numbers from 1, e.g. 3 or 3,4');
   }
   for (const key of ['latitude', 'longitude', 'speed', 'heading']) {
     if (Number.isNaN(config[key])) {
@@ -122,10 +134,11 @@ export function buildPositions(config) {
 }
 
 /**
- * The request body of one position.
+ * The request body of one position. With `panic` true or false the frame carries
+ * `sensors.panic_button`; with `panic` undefined it has no sensors.
  */
-export function trackPayload(assetId, position, timestamp) {
-  return {
+export function trackPayload(assetId, position, timestamp, panic) {
+  const payload = {
     asset_id: assetId,
     timestamp,
     gps: {
@@ -135,6 +148,8 @@ export function trackPayload(assetId, position, timestamp) {
       heading: position.heading,
     },
   };
+  if (panic !== undefined) payload.sensors = { panic_button: panic };
+  return payload;
 }
 
 /**
@@ -167,7 +182,7 @@ export class TrackDevice {
     this.stats.startTime = Date.now();
     let index = 0;
     while (this.running) {
-      await this.send(positions[index]);
+      await this.send(positions[index], index + 1);
       index++;
       if (index >= positions.length) {
         if (!this.config.loop) break;
@@ -215,11 +230,11 @@ export class TrackDevice {
     this.tokenExpiry = Date.now() + (data.expires_in || 3600) * 1000;
   }
 
-  async send(position) {
+  async send(position, number) {
     const now = new Date();
-    const payload = trackPayload(this.config.assetId, position, now.toISOString());
-    const requestId = randomUUID();
-    const label = `#${this.stats.sent + 1} ${payload.gps.latitude},${payload.gps.longitude}`;
+    const panic = this.config.panic ? this.config.panic.has(number) : undefined;
+    const payload = trackPayload(this.config.assetId, position, now.toISOString(), panic);
+    const label = `#${this.stats.sent + 1} ${payload.gps.latitude},${payload.gps.longitude}${panic ? ' PANIC' : ''}`;
     this.stats.sent++;
 
     if (this.config.dryRun) {
@@ -234,8 +249,6 @@ export class TrackDevice {
         headers: {
           Authorization: `Bearer ${await this.getToken()}`,
           'Content-Type': 'application/json',
-          'X-Request-Id': requestId,
-          'X-Request-Timestamp': Math.floor(now.getTime() / 1000).toString(),
         },
         body: JSON.stringify(payload),
       });
@@ -247,8 +260,8 @@ export class TrackDevice {
         this.stats.rejected++;
         console.log(chalk.red(`✗ ${label} ${response.status} ${text}`));
       }
-      if (this.config.verbose) {
-        console.log(chalk.gray(`   └─ X-Request-Id: ${requestId}`));
+      if (this.config.verbose && response.headers.get('x-request-id')) {
+        console.log(chalk.gray(`   └─ X-Request-Id: ${response.headers.get('x-request-id')}`));
       }
     } catch (error) {
       this.stats.rejected++;

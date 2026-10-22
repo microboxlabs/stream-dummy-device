@@ -110,6 +110,7 @@ program
   .option('-l, --loop', 'Repeat the positions indefinitely', false)
   .option('-v, --verbose', 'Print response bodies and request ids', false)
   .option('--dry-run', 'Print the positions without sending them', false)
+  .option('--panic <positions>', 'Press the panic button on these positions (1-based), e.g. 3 or 3,4')
   .action(async (options) => {
     try {
       loadEnv(options.envFile);

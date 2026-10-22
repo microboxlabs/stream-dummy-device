@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { TrackDevice, buildPositions, validateTrackConfig } from '../src/track.js';
+import { TrackDevice, buildPositions, parsePanic, validateTrackConfig } from '../src/track.js';
 
 function server(handler) {
   return new Promise((resolve) => {
@@ -43,8 +43,8 @@ test('gets a token with client credentials and sends each position with it', asy
   const track = seen.filter((r) => r.url === '/v1/asset/track');
   assert.equal(track.length, 2);
   assert.equal(track[0].headers.authorization, 'Bearer jwt-1');
-  assert.ok(track[0].headers['x-request-id']);
-  assert.match(track[0].headers['x-request-timestamp'], /^\d+$/);
+  assert.equal(track[0].headers['x-request-id'], undefined, 'the gateway sets the request id');
+  assert.equal(track[0].body.sensors, undefined, 'no panic button without --panic');
   assert.equal(track[0].body.asset_id, 'TEST01');
   assert.equal(track[0].body.gps.latitude, -33.4489);
   assert.ok(track[1].body.gps.latitude > track[0].body.gps.latitude, 'heading 0 moves north');
@@ -81,4 +81,27 @@ test('requires a track URL and credentials', () => {
     '--track-url is required',
     'Either --auth-token or --client-id/--client-secret must be provided',
   ]);
+});
+
+test('--panic presses the panic button on the given positions only', async () => {
+  const bodies = [];
+  const s = await server((req, body, res) => {
+    bodies.push(body);
+    res.end('{}');
+  });
+  const stats = await new TrackDevice({
+    ...base, count: 4, panic: new Set([2, 3]),
+    trackUrl: `http://127.0.0.1:${s.address().port}/v1/asset/track`, authToken: 'miot_sk_x',
+  }).start();
+  s.close();
+
+  assert.equal(stats.accepted, 4);
+  assert.deepEqual(bodies.map((b) => b.sensors.panic_button), [false, true, true, false]);
+});
+
+test('--panic takes position numbers from 1', () => {
+  assert.deepEqual([...parsePanic('3, 4')], [3, 4]);
+  assert.equal(parsePanic(undefined), null);
+  assert.ok(validateTrackConfig({ ...base, dryRun: true, trackUrl: 'x', panic: parsePanic('0') })
+    .some((e) => e.includes('--panic')));
 });

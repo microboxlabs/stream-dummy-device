@@ -129,6 +129,8 @@ npx @microboxlabs/dummy-device track \
   --auth-token "miot_sk_..." --asset-id ABCD12
 ```
 
+The gateway sets `X-Request-Id`; with `--verbose` the command prints the one it returns.
+
 Without `--route`, positions start at `--latitude`/`--longitude` and move along `--heading` at `--speed`.
 `--route` takes a JSON array of `[latitude, longitude]` pairs or a GeoJSON `LineString`.
 
@@ -146,9 +148,10 @@ Without `--route`, positions start at `--latitude`/`--longitude` and move along 
 | --client-id, --client-secret, --token-url, --audience | OAuth2 client credentials | - |
 | --loop | Repeat the positions | false |
 | --dry-run | Print the positions without sending | false |
+| --panic \<positions\> | Press the panic button (`sensors.panic_button`) on these positions, e.g. `3` or `3,4`; the other positions send it released | - |
 
 Environment variables: `STREAMHUB_TRACK_URL`, `STREAMHUB_ASSET_ID`, `STREAMHUB_COUNT`, `STREAMHUB_ROUTE`,
-`STREAMHUB_LATITUDE`, `STREAMHUB_LONGITUDE`, `STREAMHUB_SPEED`, `STREAMHUB_HEADING`, plus the
+`STREAMHUB_LATITUDE`, `STREAMHUB_LONGITUDE`, `STREAMHUB_SPEED`, `STREAMHUB_HEADING`, `STREAMHUB_PANIC`, plus the
 authentication variables above. The command exits with 1 when any position is rejected.
 
 ## Frame Iteration
