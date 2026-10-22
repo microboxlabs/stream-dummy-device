@@ -11,7 +11,11 @@ function server(handler) {
     const s = http.createServer((req, res) => {
       let body = '';
       req.on('data', (c) => (body += c));
-      req.on('end', () => handler(req, body ? JSON.parse(body) : null, res));
+      req.on('end', () => {
+        // No keep-alive, so close() does not wait on an idle connection.
+        res.setHeader('connection', 'close');
+        handler(req, body ? JSON.parse(body) : null, res);
+      });
     });
     s.listen(0, '127.0.0.1', () => resolve(s));
   });
