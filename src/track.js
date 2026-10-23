@@ -384,8 +384,8 @@ export class TrackDevice {
         offset += span + loopGap;
         index = 0;
       }
-      this.stats.replayedMs += Math.max(0, gap);
       if (this.running && !dryRun) await this.sleep(replayWait(gap, speedup, maxGap));
+      if (this.running) this.stats.replayedMs += Math.max(0, gap);
     }
   }
 
@@ -445,6 +445,8 @@ export class TrackDevice {
     if (this.config.dryRun) {
       console.log(chalk.gray(`[DRY RUN] ${label} ${JSON.stringify(payload)}`));
       this.stats.accepted++;
+      // Dry runs do not wait, so yield here to let SIGINT and stop() run.
+      await new Promise((resolve) => setTimeout(resolve, 0));
       return;
     }
 

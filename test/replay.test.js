@@ -143,6 +143,32 @@ test('--dry-run does not wait, in replay and in generated mode', async () => {
   assert.equal(generated.device.stats.sent, 3);
 });
 
+test('--dry-run --loop can be stopped', { timeout: 5000 }, async () => {
+  const replay = fakeDevice({ replay: replayFile([line(0), line(3)]), dryRun: true, loop: true });
+  replay.device.post = TrackDevice.prototype.post;
+  const log = console.log;
+  console.log = () => {};
+  try {
+    setTimeout(() => replay.device.stop(), 20);
+    await replay.device.start();
+  } finally {
+    console.log = log;
+  }
+  assert.ok(replay.device.stats.sent > 2);
+});
+
+test('stopping during a wait does not count that gap as replayed', async () => {
+  const { device } = fakeDevice({ replay: replayFile([line(0), line(3), line(603)]) });
+  let waits = 0;
+  device.sleep = async () => {
+    waits++;
+    if (waits === 2) device.stop();
+  };
+  const stats = await device.start();
+  assert.equal(stats.sent, 2);
+  assert.equal(stats.replayedMs, 3000);
+});
+
 test('--replay conflicts with the generated-position options and needs --asset-id', () => {
   const saved = { ...process.env };
   for (const key of Object.keys(process.env)) if (key.startsWith('STREAMHUB_')) delete process.env[key];
