@@ -6,7 +6,7 @@ import { config } from 'dotenv';
 import chalk from 'chalk';
 import { DummyDevice } from './device.js';
 import { loadConfig } from './config.js';
-import { TrackDevice, loadTrackConfig } from './track.js';
+import { TrackDevice, loadTrackConfig, trackWarnings } from './track.js';
 
 const { version } = createRequire(import.meta.url)('../package.json');
 
@@ -97,13 +97,19 @@ program
   .description('Send GPS positions of one asset to a track endpoint')
   .option('-u, --track-url <url>', 'Track endpoint, e.g. https://iot.streamhub.cl/v1/asset/track')
   .option('-a, --asset-id <id>', 'Asset identifier (plate)')
-  .option('-I, --interval <seconds>', 'Seconds between positions', '5')
-  .option('-c, --count <count>', 'Positions to send when no route is given', '10')
+  .option('-I, --interval <seconds>', 'Seconds between positions (default: 5)')
+  .option('-c, --count <count>', 'Positions to send when no route is given (default: 10)')
   .option('-r, --route <file>', 'JSON array of [lat, lon] points or a GeoJSON LineString')
   .option('--latitude <deg>', 'Start latitude when no route is given')
   .option('--longitude <deg>', 'Start longitude when no route is given')
-  .option('--speed <kmh>', 'Speed in km/h', '50')
+  .option('--speed <kmh>', 'Speed in km/h (default: 50)')
   .option('--heading <deg>', 'Heading in degrees when no route is given')
+  .option('--replay <file>', 'Replay a recorded trip: NDJSON, one track payload per line')
+  .option('--speedup <n>', 'Replay: divide the recorded gaps by n (default: 1)')
+  .option('--max-gap <seconds>', 'Replay: longest single wait, for long stops (default: 300)')
+  .option('--keep-timestamps', 'Replay: send the recorded timestamps instead of moving them to now')
+  .option('--from <n>', 'Replay: first point to send (1-based)')
+  .option('--to <n>', 'Replay: last point to send (1-based, inclusive)')
   .option('-t, --auth-token <token>', 'JWT or MIOT API key (miot_sk_...)')
   .option('--client-id <id>', 'OAuth2 client ID')
   .option('--client-secret <secret>', 'OAuth2 client secret')
@@ -113,7 +119,7 @@ program
   .option('-l, --loop', 'Repeat the positions indefinitely', false)
   .option('-v, --verbose', 'Print response bodies and request ids', false)
   .option('--dry-run', 'Print the positions without sending them', false)
-  .option('--panic <positions>', 'Press the panic button on these positions (1-based), e.g. 3 or 3,4')
+  .option('--panic <positions>', 'Press the panic button on these positions (1-based; with --replay, point numbers in the file), e.g. 3 or 3,4')
   .action(async (options) => {
     try {
       loadEnv(options.envFile);
@@ -123,13 +129,23 @@ program
       console.log(chalk.gray('\u2500'.repeat(50)));
       console.log(chalk.white('  Track URL:     ') + chalk.yellow(cfg.trackUrl));
       console.log(chalk.white('  Asset ID:      ') + chalk.yellow(cfg.assetId));
-      console.log(chalk.white('  Interval:      ') + chalk.yellow(`${cfg.interval}s`));
-      console.log(chalk.white('  Route:         ') + chalk.yellow(cfg.route || `${cfg.count} points from ${cfg.latitude},${cfg.longitude}`));
+      if (cfg.replay) {
+        const slice = cfg.from || cfg.to ? ` points ${cfg.from ?? 1}-${cfg.to ?? 'end'}` : '';
+        console.log(chalk.white('  Replay:        ') + chalk.yellow(`${cfg.replay}${slice}`));
+        console.log(chalk.white('  Speedup:       ') + chalk.yellow(`x${cfg.speedup}, waits at most ${cfg.maxGap}s`));
+        console.log(chalk.white('  Timestamps:    ') + chalk.yellow(cfg.keepTimestamps ? 'recorded' : 'moved to now'));
+      } else {
+        console.log(chalk.white('  Interval:      ') + chalk.yellow(`${cfg.interval}s`));
+        console.log(chalk.white('  Route:         ') + chalk.yellow(cfg.route || `${cfg.count} points from ${cfg.latitude},${cfg.longitude}`));
+      }
       console.log(chalk.white('  Auth:          ') + chalk.yellow(
         cfg.authToken ? (cfg.authToken.startsWith('miot_sk_') ? 'API key' : 'Token provided') :
         (cfg.clientId ? 'OAuth2 client credentials' : 'None')
       ));
       console.log(chalk.gray('\u2500'.repeat(50)) + '\n');
+      for (const warning of trackWarnings(cfg)) {
+        console.log(chalk.yellow(`\u26a0\ufe0f  ${warning}`));
+      }
 
       const device = new TrackDevice(cfg);
       process.on('SIGINT', () => device.stop());

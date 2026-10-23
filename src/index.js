@@ -8,5 +8,7 @@
 export { DummyDevice } from './device.js';
 export { ApiClient } from './api.js';
 export { loadConfig, validateConfig } from './config.js';
-export { TrackDevice, loadTrackConfig, validateTrackConfig, buildPositions, trackPayload } from './track.js';
+export {
+  TrackDevice, loadTrackConfig, validateTrackConfig, buildPositions, trackPayload, readReplay, parseReplay, replayPayload,
+} from './track.js';
 

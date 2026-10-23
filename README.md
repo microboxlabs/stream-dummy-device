@@ -147,12 +147,54 @@ Without `--route`, positions start at `--latitude`/`--longitude` and move along 
 | --auth-token \<token\> | JWT or MIOT API key | - |
 | --client-id, --client-secret, --token-url, --audience | OAuth2 client credentials | - |
 | --loop | Repeat the positions | false |
-| --dry-run | Print the positions without sending | false |
+| --dry-run | Print the positions without sending and without waiting | false |
 | --panic \<positions\> | Press the panic button (`sensors.panic_button`) on these positions, e.g. `3` or `3,4`; the other positions send it released | - |
 
 Environment variables: `STREAMHUB_TRACK_URL`, `STREAMHUB_ASSET_ID`, `STREAMHUB_COUNT`, `STREAMHUB_ROUTE`,
 `STREAMHUB_LATITUDE`, `STREAMHUB_LONGITUDE`, `STREAMHUB_SPEED`, `STREAMHUB_HEADING`, `STREAMHUB_PANIC`, plus the
 authentication variables above. The command exits with 1 when any position is rejected.
+
+### Replay a recorded trip
+
+`--replay <file>` sends the payloads of a recorded trip, one per line of an NDJSON file:
+
+```json
+{"timestamp":"2024-01-01T10:00:00Z","gps":{"latitude":-33.45,"longitude":-70.66,"altitude":500,"speed":40,"heading":90},"sensors":{"engine_status":true}}
+{"timestamp":"2024-01-01T10:00:03Z","gps":{"latitude":-33.4499,"longitude":-70.6597,"altitude":501,"speed":42,"heading":90},"sensors":{"engine_status":true}}
+```
+
+```bash
+npx @microboxlabs/dummy-device track \
+  --track-url https://<host>/api/v1/asset/track --auth-token "miot_sk_..." \
+  --asset-id DEMO01 --replay trip.replay.ndjson --speedup 4 --from 100 --to 400
+```
+
+This sends points 100 to 400 at four times the recorded speed.
+
+- Each payload is sent as recorded, with two changes: `asset_id` is `--asset-id`, and `timestamp` is moved so the
+  first point sent is now. The gaps between points stay as recorded. `--keep-timestamps` sends the recorded timestamps.
+- The command waits the recorded gap between two points, divided by `--speedup`. A single wait is at most
+  `--max-gap` seconds, so a long stop in the recording does not hold the replay. The timestamps still keep the full gap.
+- `--panic` takes point numbers in the file and adds `panic_button: true` to those points' sensors. The other points keep
+  their recorded sensors.
+- `--loop` starts again from the first point. The timestamps continue after the last point sent.
+- A `--asset-id` is required. `--route`, `--count`, `--latitude`, `--longitude`, `--speed` and `--heading` cannot be used
+  with `--replay`. `--interval` is ignored.
+- Blank lines are skipped. A line that is not a JSON object with a `timestamp` and numeric `gps.latitude`/`gps.longitude`
+  stops the command before anything is sent, with its line number. An `asset_id` in the file is ignored.
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| --replay \<file\> | NDJSON file, one payload per line | - |
+| --speedup \<n\> | Divide the recorded gaps by n | 1 |
+| --max-gap \<seconds\> | Longest single wait | 300 |
+| --keep-timestamps | Send the recorded timestamps | false |
+| --from \<n\>, --to \<n\> | First and last point to send (1-based, inclusive) | all points |
+
+Environment variables: `STREAMHUB_REPLAY`, `STREAMHUB_SPEEDUP`, `STREAMHUB_MAX_GAP`, `STREAMHUB_KEEP_TIMESTAMPS`,
+`STREAMHUB_REPLAY_FROM`, `STREAMHUB_REPLAY_TO`.
+
+The summary at the end shows the points sent, accepted and rejected, the recorded time replayed and the wall time.
 
 ## Frame Iteration
 
